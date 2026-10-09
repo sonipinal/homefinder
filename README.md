@@ -1,59 +1,101 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Home Finder
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A home search app built with Laravel 12 and Vue 3. Buyers can search homes by city, price, and bedrooms, with results filtered and paginated on the server.
 
-## About Laravel
+This is a personal learning and portfolio project. All data is fake sample data.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Features
+REST API for homes and communities (one community has many homes)
+Server-side search filters: city, max price, minimum bedrooms
+Input validation (returns 422 with clear error messages for bad input)
+Pagination that keeps the active filters in the page links
+Eager loading (with('community')) to avoid the N+1 query problem
+Database index on price and bedrooms for faster searches
+Vue 3 front end with reusable components (HomeCard), props and emits
+Debounced search: the API is called after the user stops typing, not on every key press
+Favorites toggle on each home card
+Tech Stack
+Layer	Tools
+Back end	PHP 8.2, Laravel 12, Eloquent ORM
+Front end	Vue 3 (Composition API, <script setup>), Vite, Axios
+Database	MySQL / MariaDB
+Tools	Composer, npm, Postman, Git
+API
+GET /api/homes
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Returns homes with their community, sorted by price (lowest first), paginated.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Query parameter	Type	Example	Meaning
+city	text	Frisco	Homes in communities in this city
+max_price	integer	400000	Price at or below this amount
+min_bedrooms	integer	3	At least this many bedrooms
+page	integer	2	Page number
 
-## Learning Laravel
+Examples:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+GET /api/homes?city=Frisco
+GET /api/homes?max_price=400000&min_bedrooms=3
+GET /api/homes?city=Plano&page=2
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Invalid input, for example max_price=abc, returns 422 Unprocessable Content with a JSON error message (send the header Accept: application/json).
 
-## Laravel Sponsors
+POST /api/homes
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Creates a home. Returns 201 Created.
 
-### Premium Partners
+json
+{
+  "community_id": 1,
+  "address": "123 Main St",
+  "price": 350000,
+  "bedrooms": 3
+}
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+community_id must exist in the communities table.
 
-## Contributing
+Database
+communities: id, name, city
+homes: id, community_id (foreign key), address, price, bedrooms, timestamps
+Index on price and bedrooms
+How to Run Locally
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Requirements: PHP 8.2+, Composer, Node.js, MySQL or MariaDB.
 
-## Code of Conduct
+bash
+git clone https://github.com/sonipinal/homefinder.git
+cd homefinder
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+composer install
+npm install
 
-## Security Vulnerabilities
+cp .env.example .env
+php artisan key:generate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Create a database named homefinder, set your database settings in .env, then:
 
-## License
+bash
+php artisan migrate
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Run the app in two terminals:
+
+bash
+php artisan serve
+npm run dev
+
+Open http://127.0.0.1:8000
+
+Roadmap
+ Vue front end connected to the API (components, props, emits)
+ Server-side filters, validation, and pagination
+ Form Request validation classes and API Resources
+ Login with Laravel Sanctum (token auth)
+ Admin-only create, edit, and delete (Policies)
+ XML feed of homes
+ CSV import with a queued job
+ Feature tests
+ Seeders and factories with realistic sample data
+ Tailwind CSS design, home detail pages, contact form
+ Live deployment
+Author
+
+Pinal Soni
