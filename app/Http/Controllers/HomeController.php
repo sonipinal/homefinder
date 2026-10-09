@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use App\Models\Home;
+use App\Http\Requests\SearchHomesRequest;
+use App\Http\Requests\StoreHomeRequest;
 
 class HomeController extends Controller
 {
@@ -19,19 +20,14 @@ class HomeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-{
-    $data = $request->validate([
-        'community_id' => 'required|exists:communities,id',
-        'address'      => 'required|string|max:255',
-        'price'        => 'required|integer|min:0',
-        'bedrooms'     => 'required|integer|min:0',
-    ]);
+    public function store(StoreHomeRequest $request)
+    {
+        // validated() = only the fields that passed the rules
+        $home = Home::create($request->validated());
 
-    $home = Home::create($data);
-
-    return response()->json($home, 201);
-}
+        // load the community so the response shows it too
+        return response()->json($home->load('community'), 201);
+    }
 
     /**
      * Display the specified resource.
