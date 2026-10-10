@@ -47,8 +47,8 @@ async function loadHomes(page = 1) {
     // response.data      = the JSON from Laravel (axios puts it here)
     // response.data.data = the list of homes (paginate() puts it inside "data")
     homes.value = response.data.data
-    currentPage.value = response.data.current_page
-    lastPage.value = response.data.last_page
+    currentPage.value = response.data.meta.current_page
+    lastPage.value = response.data.meta.last_page
   } catch (e) {
     error.value = 'Could not load homes.'
   } finally {

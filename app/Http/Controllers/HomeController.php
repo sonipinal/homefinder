@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Home;
 use App\Http\Requests\SearchHomesRequest;
 use App\Http\Requests\StoreHomeRequest;
+use App\Http\Resources\HomeResource;
 
 class HomeController extends Controller
 {
@@ -14,7 +15,7 @@ class HomeController extends Controller
     public function index()
     {
         $homes = Home::with('community')->paginate(2);
-        return response()->json($homes);
+        return HomeResource::collection($homes);
     }
 
     /**
@@ -26,7 +27,9 @@ class HomeController extends Controller
         $home = Home::create($request->validated());
 
         // load the community so the response shows it too
-        return response()->json($home->load('community'), 201);
+            return (new HomeResource($home->load('community')))
+        ->response()
+        ->setStatusCode(201);
     }
 
     /**
