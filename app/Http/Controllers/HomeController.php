@@ -1,58 +1,39 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Http\Request;
-use App\Models\Home;
+
 use App\Http\Requests\SearchHomesRequest;
 use App\Http\Requests\StoreHomeRequest;
 use App\Http\Resources\HomeResource;
+use App\Models\Home;
 
 class HomeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // GET /api/homes: public search with filters (Day 1), validation (Day 2), resources (Day 3)
+    public function index(SearchHomesRequest $request)
     {
-        $homes = Home::with('community')->paginate(2);
+        $homes = Home::with('community')                       // avoid N+1
+            ->when($request->city, function ($query, $city) {
+                $query->whereHas('community', function ($q) use ($city) {
+                    $q->where('city', 'like', "%{$city}%");
+                });
+            })
+            ->when($request->max_price, fn ($query, $max) => $query->where('price', '<=', $max))
+            ->when($request->min_bedrooms, fn ($query, $min) => $query->where('bedrooms', '>=', $min))
+            ->orderBy('price')
+            ->paginate(2)                                      // change back to 20 later
+            ->withQueryString();                               // keep filters in page links
+
         return HomeResource::collection($homes);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // POST /api/homes: logged-in users only (Day 4, see routes/api.php)
     public function store(StoreHomeRequest $request)
     {
-        // validated() = only the fields that passed the rules
         $home = Home::create($request->validated());
 
-        // load the community so the response shows it too
-            return (new HomeResource($home->load('community')))
-        ->response()
-        ->setStatusCode(201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return (new HomeResource($home->load('community')))
+            ->response()
+            ->setStatusCode(201);
     }
 }
