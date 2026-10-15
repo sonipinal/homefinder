@@ -1,9 +1,9 @@
 <script setup>
 // ===== IMPORTS =====
 // ref: reactive data (page updates when it changes)
-// computed: value calculated from other data (recalculates automatically)
+// watch: runs code when a value changes (used for the search filters)
 // onMounted: runs code once when the page first loads
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import axios from 'axios'                          // makes HTTP requests to our Laravel API
 import HomeCard from './components/HomeCard.vue'   // child component that shows one home
 
@@ -13,9 +13,10 @@ const loading = ref(true)    // true while waiting for the API, shows "Loading..
 const error = ref(null)      // error message if the API call fails
 
 // ===== PAGINATION =====
-// Laravel's paginate() returns current_page and last_page in the JSON
+// The API Resource puts pagination info inside "meta"
 const currentPage = ref(1)
 const lastPage = ref(1)
+const total = ref(0)         // total homes that match the filters (ALL pages, not just this one)
 
 // ===== FAVORITES =====
 // The parent (this file) OWNS the favorites list.
@@ -33,22 +34,39 @@ function toggleFavorite(id) {
   }
 }
 
+// ===== SEARCH FILTERS =====
+// Connected to the inputs with v-model (two-way binding).
+// Declared BEFORE loadHomes and watch, because both use them.
+const city = ref('')
+const maxPrice = ref('')
+const minBedrooms = ref('')
+
 // ===== LOAD HOMES FROM THE API =====
-// One function reused for the first load AND every page change.
-// page = 1 is the default if no page number is given.
+// One function reused for the first load, every page change, and every search.
+// The FILTERING now happens in Laravel (server-side), so it works across ALL pages.
 async function loadHomes(page = 1) {
   loading.value = true
   error.value = null   // clear any old error before trying again
 
   try {
-    // GET /api/homes?page=2  ->  Laravel HomeController@index
-    const response = await axios.get('/api/homes', { params: { page } })
+    // GET /api/homes?page=1&city=Frisco&max_price=400000  ->  HomeController@index
+    // "|| undefined" = if the box is empty, don't send that filter at all
+    const response = await axios.get('/api/homes', {
+      params: {
+        page,
+        city: city.value || undefined,
+        max_price: maxPrice.value || undefined,
+        min_bedrooms: minBedrooms.value || undefined,
+      },
+    })
 
     // response.data      = the JSON from Laravel (axios puts it here)
-    // response.data.data = the list of homes (paginate() puts it inside "data")
+    // response.data.data = the list of homes for this page
+    // response.data.meta = pagination info from the API Resource
     homes.value = response.data.data
     currentPage.value = response.data.meta.current_page
     lastPage.value = response.data.meta.last_page
+    total.value = response.data.meta.total
   } catch (e) {
     error.value = 'Could not load homes.'
   } finally {
@@ -57,31 +75,14 @@ async function loadHomes(page = 1) {
   }
 }
 
-// ===== SEARCH FILTERS =====
-// Connected to the inputs with v-model (two-way binding)
-const city = ref('')
-const maxPrice = ref('')
-const minBedrooms = ref('')
-
-// Homes that match ALL filters. Recalculates automatically when any filter changes.
-// NOTE: this only filters the CURRENT page (browser-side).
-// For thousands of homes, filtering should move to the Laravel API (Week 2, Day 1).
-const filteredHomes = computed(() => {
-  return homes.value.filter(home => {
-    // Empty box = no filter (every home passes). Otherwise partial, case-insensitive match.
-    const matchesCity = city.value === '' ||
-      home.community.city.toLowerCase().includes(city.value.toLowerCase())
-
-    // Number() turns the typed text into a real number before comparing
-    const matchesPrice = maxPrice.value === '' ||
-      home.price <= Number(maxPrice.value)
-
-    const matchesBeds = minBedrooms.value === '' ||
-      home.bedrooms >= Number(minBedrooms.value)
-
-    // Keep the home only if it matches ALL three (&& = AND)
-    return matchesCity && matchesPrice && matchesBeds
-  })
+// ===== DEBOUNCED SEARCH =====
+// When any filter changes, wait 400 ms after the user STOPS typing, then search.
+// Typing "Frisco" sends 1 API request instead of 6 (one per letter).
+// Always go back to page 1, because the old page number may not exist anymore.
+let timer = null
+watch([city, maxPrice, minBedrooms], () => {
+  clearTimeout(timer)                       // cancel the previous wait
+  timer = setTimeout(() => loadHomes(1), 400)
 })
 
 // ===== START =====
@@ -105,22 +106,22 @@ onMounted(() => loadHomes())
         <option value="3">3+</option>
         <option value="4">4+</option>
       </select>
-      <!-- homes.length is the CURRENT page only, not all homes (fixed in Week 2) -->
-      <p>Showing {{ filteredHomes.length }} of {{ homes.length }} homes</p>
+      <!-- total comes from the API, so it counts matching homes on ALL pages -->
+      <p v-if="!loading && !error">Found {{ total }} homes</p>
     </div>
 
     <!-- ===== STATUS MESSAGES ===== -->
     <!-- Only ONE of these shows: v-if / v-else-if work like if / else if -->
     <p v-if="loading">Loading homes...</p>
     <p v-else-if="error">{{ error }}</p>
-    <p v-else-if="filteredHomes.length === 0">No homes found.</p>
+    <p v-else-if="homes.length === 0">No homes match your search.</p>
 
     <!-- ===== HOME CARDS ===== -->
     <!-- v-for: one HomeCard per home. :key helps Vue track each card efficiently.
          :home and :is-favorite = props (data DOWN to the child)
          @toggle-favorite      = event listener (event UP from the child) -->
     <HomeCard
-      v-for="home in filteredHomes"
+      v-for="home in homes"
       :key="home.id"
       :home="home"
       :is-favorite="favorites.includes(home.id)"
