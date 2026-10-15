@@ -110,7 +110,7 @@ Creates a home. Returns `201 Created`.
 Requirements: PHP 8.2+, Composer, Node.js, MySQL or MariaDB.
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/homefinder.git
+git clone https://github.com/sonipinal/homefinder.git
 cd homefinder
 
 composer install
