@@ -1,11 +1,21 @@
 @import 'tailwindcss';
 
+/* Tell Tailwind which files use its classes */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+@source '../**/*.vue';
 
+/* Home Finder design tokens: use them as bg-oak, text-gold, font-sans, etc. */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+    --color-oak: #1E3B32;        /* live-oak green: header, hero, main buttons */
+    --color-oak-light: #2F5A4C;  /* hover state for green buttons */
+    --color-gold: #C99A2E;       /* prairie gold: favorites star, small highlights */
+    --color-ink: #1C2526;        /* main text */
+    --color-muted: #5B6B6E;      /* secondary text */
+    --color-line: #D9E1E4;       /* borders */
+    --color-mist: #EEF3F1;       /* page background */
 }
