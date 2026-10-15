@@ -21,7 +21,7 @@ class HomeController extends Controller
             ->when($request->max_price, fn ($query, $max) => $query->where('price', '<=', $max))
             ->when($request->min_bedrooms, fn ($query, $min) => $query->where('bedrooms', '>=', $min))
             ->orderBy('price')
-            ->paginate(2)                                      // change back to 20 later
+            ->paginate(20)                                      // change back to 20 later
             ->withQueryString();                               // keep filters in page links
 
         return HomeResource::collection($homes);
