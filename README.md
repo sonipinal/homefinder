@@ -19,13 +19,15 @@ This is a personal learning and portfolio project. All data is fake sample data.
 - Vue 3 front end with reusable components (`HomeCard`), props and emits
 - Debounced search: the API is called after the user stops typing, not on every key press
 - Favorites toggle on each home card
+- Responsive Tailwind CSS design: 1, 2 or 3 columns depending on screen size, with loading, empty and error states
+- Factories and seeders: one command creates 48 realistic sample homes in 6 communities
 
 ## Tech Stack
 
 | Layer | Tools |
 |---|---|
 | Back end | PHP 8.2, Laravel 12, Eloquent ORM |
-| Front end | Vue 3 (Composition API, `<script setup>`), Vite, Axios |
+| Front end | Vue 3 (Composition API, `<script setup>`), Vite, Axios, Tailwind CSS |
 | Database | MySQL / MariaDB |
 | Auth | Laravel Sanctum (API tokens) |
 | Testing | PHPUnit feature tests, in-memory SQLite |
@@ -65,12 +67,12 @@ Response shape (API Resource):
       "price": 350000,
       "price_formatted": "$350,000",
       "bedrooms": 3,
-      "community": { "id": 1, "name": "Lakewood", "city": "Frisco" },
+      "community": { "id": 1, "name": "Cedar Ridge", "city": "Frisco" },
       "listed_at": "2026-09-30"
     }
   ],
   "links": { "...": "..." },
-  "meta": { "current_page": 1, "last_page": 1, "total": 5 }
+  "meta": { "current_page": 1, "last_page": 4, "total": 48 }
 }
 ```
 
@@ -123,15 +125,14 @@ php artisan key:generate
 Create a database named `homefinder`, set your database settings in `.env`, then:
 
 ```bash
-php artisan migrate
+php artisan migrate --seed
 ```
 
-Create a user for logging in:
+This creates the tables, 48 sample homes in 6 communities, and a login user for testing the API:
 
-```bash
-php artisan tinker
->>> App\Models\User::create(['name' => 'Admin', 'email' => 'admin@homefinder.test', 'password' => 'password123']);
-```
+| Email | Password |
+|---|---|
+| `admin@homefinder.test` | `password123` |
 
 Run the app in two terminals:
 
@@ -163,11 +164,12 @@ Tests use a fresh in-memory SQLite database, so they never touch your real data.
 - [x] Form Request validation classes and API Resources
 - [x] Login with Laravel Sanctum (token auth)
 - [x] Feature tests
+- [x] Seeders and factories with realistic sample data
+- [x] Tailwind CSS design, mobile-friendly layout
 - [ ] Admin-only create, edit, and delete (Policies)
 - [ ] XML feed of homes
 - [ ] CSV import with a queued job
-- [ ] Seeders and factories with realistic sample data
-- [ ] Tailwind CSS design, home detail pages, contact form
+- [ ] Home detail pages, home photos, contact form
 - [ ] Live deployment
 
 ## Author
